@@ -1,93 +1,132 @@
 # arachnel-plugin-freetp
 
+Source plugin for [Arachnel](https://github.com/PetWork/Arachnel): [FreeTP](https://freetp.org/) catalog — portable archives, Inno Setup, `.ftp` multi-part installers, add-on overlays.
 
+Catalog JSON: [freetp-hydra-link](https://gitlab.com/BadKiko/freetp-hydra-link).
 
-## Getting started
+**General plugin development guide (new plugins, ABI, paths):** [Arachnel docs/PLUGIN_SDK.md](https://github.com/PetWork/Arachnel/blob/main/docs/PLUGIN_SDK.md)
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+---
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+## Requirements
 
-## Add your files
+- CMake 3.20+, C++20, Ninja
+- Qt 6.8+ (**Core**, **Network**)
+- **Arachnel** checkout (Plugin SDK — not necessarily a built app)
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+`build-win/` and `games-arachnel.json` are **not** in git — the catalog is loaded at runtime from [freetp-hydra-link](https://gitlab.com/BadKiko/freetp-hydra-link) via `catalogUrl` in `plugin.json`. CMake may optionally download a snapshot into `games-arachnel.json` for offline `.arach` bundles.
+
+---
+
+## Clone layout
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/BadKiko/arachnel-plugin-freetp.git
-git branch -M main
-git push -uf origin main
+your-workspace/
+  Arachnel/
+  arachnel-plugin-freetp/    ← this repo
 ```
 
-## Integrate with your tools
+---
 
-* [Set up project integrations](https://gitlab.com/BadKiko/arachnel-plugin-freetp/-/settings/integrations)
+## Build & install (Windows)
 
-## Collaborate with your team
+```powershell
+git clone https://github.com/PetWork/Arachnel.git
+git clone https://github.com/PetWork/arachnel-plugin-freetp.git
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+cd arachnel-plugin-freetp
 
-## Test and Deploy
+# Required: path to Arachnel sources
+$env:ARACHNEL_SDK_DIR = "C:\path\to\Arachnel"
 
-Use the built-in continuous integration in GitLab.
+# If Qt is not auto-detected under D:\Qt or C:\Qt:
+# $env:CMAKE_PREFIX_PATH = "D:\Qt\6.11.1\mingw_64"
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+.\run.ps1
+```
 
-***
+`run.ps1` will:
 
-# Editing this README
+1. Configure `build-win/` (optionally downloads `games-arachnel.json` for the bundle)
+2. Build `freetp_plugin.dll`
+3. Fill `build-win/plugin-bundle/` (`plugin.json`, DLL, catalog, `linux/`)
+4. Create `build-win/dist/freetp.arach`
+5. Copy `plugin-bundle/*` → `%LOCALAPPDATA%\PetWork\Arachnel\plugins\freetp\`
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+### Manual CMake
 
-## Suggestions for a good README
+```powershell
+cmake -S . -B build-win -G Ninja `
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo `
+  -DCMAKE_PREFIX_PATH="D:\Qt\6.11.1\mingw_64" `
+  -DARACHNEL_SDK_DIR="C:\path\to\Arachnel"
+cmake --build build-win --target freetp_plugin
+```
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+Copy `build-win/plugin-bundle/*` to:
 
-## Name
-Choose a self-explaining name for your project.
+`%LOCALAPPDATA%\PetWork\Arachnel\plugins\freetp\`
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+Or install `build-win/dist/freetp.arach` in Arachnel: **Settings → Plugins**.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+---
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+## Build (Linux)
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+```bash
+export ARACHNEL_SDK_DIR=~/src/Arachnel
+export CMAKE_PREFIX_PATH=/path/to/Qt/6.x/gcc_64
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build build --target freetp_plugin
+```
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+Install bundle into:
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+`~/.local/share/PetWork/Arachnel/plugins/freetp/`
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+---
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+## Test with Arachnel
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+```powershell
+cd ..\Arachnel
+.\run.ps1
+```
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+On Windows, `Arachnel/run.ps1` auto-deploys from `../arachnel-plugin-freetp/build-win/plugin-bundle` or `D:\PetWork\arachnel-plugin-freetp\build-win\plugin-bundle` if present.
 
-## License
-For open source projects, say how it is licensed.
+Verify in `%LOCALAPPDATA%\PetWork\Arachnel\run.log`:
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+```
+Plugin loaded: freetp v1.0.0 from ...
+```
+
+---
+
+## Repository contents
+
+| Path | In git | Purpose |
+|------|--------|---------|
+| `src/` | yes | Plugin implementation |
+| `plugin.json` | yes | Manifest (`catalogUrl` → freetp-hydra-link) |
+| `games-arachnel.json` | **no** | Optional local snapshot (CMake fetch or dev copy) |
+| `linux/` | yes | Optional Linux fix assets |
+| `build-win/` | **no** | Local build output |
+
+---
+
+## Plugin API
+
+Must match Arachnel **plugin API v2** (`plugin.json` → `"apiVersion": 2`).  
+Rebuild after Arachnel changes `ARACHNEL_PLUGIN_API_VERSION` or `CatalogEntry` layout.
+
+---
+
+## Environment variables
+
+| Variable | Description |
+|----------|-------------|
+| `ARACHNEL_SDK_DIR` | Path to Arachnel repository |
+| `CMAKE_PREFIX_PATH` | Qt 6 installation (kit directory) |
+| `ARACHNEL_SKIP_FREETP_CATALOG_FETCH` | `1` = do not download catalog at CMake configure (runtime `catalogUrl` still works) |

@@ -1,0 +1,13 @@
+build*/
+dist/
+_staging*/
+*.arach
+games-arachnel.json
+*.user
+.vscode/
+.idea/
+.cache/
+compile_commands.json
+CMakeUserPresets.json
+lib*.a
+lib*.dll.a
