@@ -132,8 +132,22 @@ git tag v1.0.0
 git push BadKiko v1.0.0
 ```
 
-Pipeline builds `freetp.arach` for **Windows (MSVC)** and **Linux**, then publishes a GitLab Release with both artifacts.  
-`plugin.json` → `version` is set from the tag (`v1.0.0` → `1.0.0`) during CI only.
+Pipeline builds platform-specific bundles, merges them into **one universal `freetp.arach`**, then publishes a GitLab Release.
+
+Contents of the universal bundle:
+
+| File | Platform |
+|------|----------|
+| `freetp_plugin.dll` | Windows (MSVC) |
+| `libfreetp_plugin.so` | Linux |
+| `plugin.json`, `games-arachnel.json`, `linux/` | shared |
+
+Arachnel loads only the native library for the current OS.
+
+```bash
+git tag v1.0.0
+git push BadKiko v1.0.0
+```
 
 | Tag format | Example |
 |------------|---------|
@@ -149,6 +163,9 @@ pwsh scripts/ci/build-plugin.ps1
 
 # Linux
 bash scripts/ci/build-plugin.sh
+
+# Merge both into dist/universal/freetp.arach
+bash scripts/ci/merge-universal-arach.sh
 ```
 
 Environment variable `ARACHNEL_SDK_REF` (default `master`) selects the Arachnel SDK git ref.

@@ -1,4 +1,4 @@
-# Tag a commit on main to build and publish freetp.arach for Windows + Linux.
+# Tag a commit on main to build and publish a universal freetp.arach (Windows + Linux).
 # Example: git tag v1.0.0 && git push BadKiko v1.0.0
 
 workflow:
@@ -8,6 +8,7 @@ workflow:
 
 stages:
   - build
+  - package
   - release
 
 variables:
@@ -27,7 +28,7 @@ build:linux:
     name: freetp-linux-$CI_COMMIT_TAG
     paths:
       - dist/linux/freetp.arach
-    expire_in: 30 days
+    expire_in: 7 days
 
 build:windows:
   stage: build
@@ -41,27 +42,44 @@ build:windows:
     name: freetp-windows-$CI_COMMIT_TAG
     paths:
       - dist/windows/freetp.arach
+    expire_in: 7 days
+
+package:universal:
+  stage: package
+  image: ubuntu:24.04
+  needs:
+    - job: build:linux
+      artifacts: true
+    - job: build:windows
+      artifacts: true
+  before_script:
+    - apt-get update
+    - apt-get install -y --no-install-recommends zip unzip
+  script:
+    - bash scripts/ci/merge-universal-arach.sh
+  artifacts:
+    name: freetp-universal-$CI_COMMIT_TAG
+    paths:
+      - dist/universal/freetp.arach
     expire_in: 30 days
 
 release:
   stage: release
   image: registry.gitlab.com/gitlab-org/release-cli:latest
   needs:
-    - job: build:linux
-      artifacts: true
-    - job: build:windows
+    - job: package:universal
       artifacts: true
   script:
-    - cp dist/linux/freetp.arach freetp-linux.arach
-    - cp dist/windows/freetp.arach freetp-windows.arach
+    - cp dist/universal/freetp.arach freetp.arach
     - |
       cat > release-notes.md <<EOF
       # FreeTP plugin ${CI_COMMIT_TAG}
 
-      Install in Arachnel: **Settings → Plugins** → \`.arach\` file.
+      Install in Arachnel: **Settings → Plugins** → \`freetp.arach\`.
 
-      - **Windows:** \`freetp-windows.arach\` (MSVC, matches Arachnel Windows release)
-      - **Linux:** \`freetp-linux.arach\`
+      One universal bundle for **Windows and Linux**:
+      - \`freetp_plugin.dll\` (Windows / MSVC)
+      - \`libfreetp_plugin.so\` (Linux)
 
       Requires Arachnel plugin API v2.
       EOF
@@ -71,7 +89,5 @@ release:
     description: ./release-notes.md
     assets:
       links:
-        - name: freetp-$CI_COMMIT_TAG-windows.arach
-          filepath: ./freetp-windows.arach
-        - name: freetp-$CI_COMMIT_TAG-linux.arach
-          filepath: ./freetp-linux.arach
+        - name: freetp-$CI_COMMIT_TAG.arach
+          filepath: ./freetp.arach
