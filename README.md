@@ -170,6 +170,10 @@ bash scripts/ci/merge-universal-arach.sh
 
 Environment variable `ARACHNEL_SDK_REF` (default `master`) selects the Arachnel SDK git ref.
 
+**Release builds:** CI reads `scripts/ci/launcher-toolchain.env` — a lockfile mirrored from [Arachnel `.github/workflows/release.yml`](https://github.com/BadKiko/Arachnel/blob/master/.github/workflows/release.yml) (Qt **6.8.2**, `win64_msvc2022_64` / `linux_gcc_64`, modules `qtshadertools qtmultimedia`, SDK tag `v0.1.x`). Bump this file when cutting a new Arachnel GitHub release so plugin DLLs match the published launcher.
+
+Install **GitLab `freetp.arach` only into Arachnel Setup from GitHub** (MSVC). Do not use it with local `run.ps1` MinGW dev builds.
+
 ---
 
 ## Environment variables

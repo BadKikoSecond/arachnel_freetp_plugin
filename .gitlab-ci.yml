@@ -1,5 +1,6 @@
 # Tag a commit on main to build and publish a universal freetp.arach (Windows + Linux).
-# Example: git tag v1.0.0 && git push BadKiko v1.0.0
+# Toolchain is locked to Arachnel GitHub release.yml — edit scripts/ci/launcher-toolchain.env
+# Example: git tag v1.0.14 && git push BadKiko v1.0.14
 
 workflow:
   rules:
@@ -12,8 +13,6 @@ stages:
   - release
 
 variables:
-  QT_VERSION: "6.8.2"
-  ARACHNEL_SDK_REF: "v0.1.4"
   ARACHNEL_SKIP_FREETP_CATALOG_FETCH: "1"
 
 build:linux:
@@ -21,7 +20,7 @@ build:linux:
   image: ubuntu:24.04
   before_script:
     - apt-get update
-    - apt-get install -y --no-install-recommends ca-certificates cmake g++ git ninja-build patchelf python3 python3-pip python3-venv zip
+    - apt-get install -y --no-install-recommends ca-certificates cmake g++ git ninja-build patchelf python3 python3-pip python3-venv zip unzip
   script:
     - bash scripts/ci/build-plugin.sh
   artifacts:
@@ -82,9 +81,11 @@ release:
       Install in Arachnel: **Settings → Plugins** → \`freetp.arach\`.
 
       One universal bundle for **Windows and Linux**:
-      - \`freetp_plugin.dll\` (Windows / MSVC)
-      - \`libfreetp_plugin.so\` (Linux)
+      - \`freetp_plugin.dll\` (Windows / MSVC 2022, Qt 6.8.2)
+      - \`libfreetp_plugin.so\` (Linux / gcc, Qt 6.8.2)
 
+      Built against the same toolchain as [Arachnel GitHub releases](https://github.com/BadKiko/Arachnel/releases).
+      Requires Arachnel **v0.1.5+** from GitHub Release (not MinGW dev builds).
       Requires Arachnel plugin API v2.
       EOF
     - |
