@@ -90,6 +90,5 @@ release:
     name: FreeTP plugin $CI_COMMIT_TAG
     description: ./release-notes.md
     assets:
-      links:
-        - name: freetp-$CI_COMMIT_TAG.arach
-          filepath: ./freetp.arach
+      paths:
+        - freetp.arach
