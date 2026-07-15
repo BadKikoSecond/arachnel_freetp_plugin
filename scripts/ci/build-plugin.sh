@@ -6,7 +6,8 @@ BUILD="${BUILD_DIR:-${ROOT}/build-linux}"
 SDK_DIR="${ARACHNEL_SDK_DIR:-${ROOT}/.ci/arachnel-sdk}"
 SDK_REF="${ARACHNEL_SDK_REF:-master}"
 QT_VERSION="${QT_VERSION:-6.8.2}"
-QT_PATH="${QT_INSTALL_DIR:-${ROOT}/.ci/qt/${QT_VERSION}/gcc_64}"
+QT_ARCH="${QT_ARCH:-linux_gcc_64}"
+QT_PATH="${QT_INSTALL_DIR:-${ROOT}/.ci/qt/${QT_VERSION}/${QT_ARCH}}"
 DIST="${ROOT}/dist/linux"
 
 cd "${ROOT}"
@@ -29,7 +30,7 @@ if [[ ! -f "${QT_PATH}/lib/cmake/Qt6/Qt6Config.cmake" ]]; then
     "${AQT_VENV}/bin/pip" install --upgrade pip aqtinstall
   fi
   export PATH="${AQT_VENV}/bin:${PATH}"
-  aqt install-qt linux desktop "${QT_VERSION}" gcc_64 \
+  aqt install-qt linux desktop "${QT_VERSION}" "${QT_ARCH}" \
     -O "$(dirname "$(dirname "${QT_PATH}")")"
 fi
 
