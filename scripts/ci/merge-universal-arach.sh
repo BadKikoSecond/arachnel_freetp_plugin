@@ -51,6 +51,7 @@ echo "Linux bundle:   ${LIN_BUNDLE}"
 
 shopt -s nullglob
 cp -a "${WIN_BUNDLE}/." "${MERGED}/"
+rm -rf "${MERGED}/Release" "${MERGED}/Debug" "${MERGED}/RelWithDebInfo" "${MERGED}/MinSizeRel"
 
 for file in "${LIN_BUNDLE}"/*; do
   base="$(basename "${file}")"

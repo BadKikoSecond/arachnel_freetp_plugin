@@ -56,6 +56,14 @@ set_target_properties(freetp_plugin PROPERTIES
 )
 if(MINGW)
     set_target_properties(freetp_plugin PROPERTIES PREFIX "")
+elseif(MSVC)
+    # Visual Studio appends Release/Debug under RUNTIME_OUTPUT_DIRECTORY otherwise.
+    foreach(_cfg IN ITEMS Release RelWithDebInfo Debug MinSizeRel)
+        set_target_properties(freetp_plugin PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY_${_cfg} "${CMAKE_BINARY_DIR}/plugin-bundle"
+            LIBRARY_OUTPUT_DIRECTORY_${_cfg} "${CMAKE_BINARY_DIR}/plugin-bundle"
+        )
+    endforeach()
 endif()
 
 set(_PLUGIN_BUNDLE_DIR "${CMAKE_BINARY_DIR}/plugin-bundle")

@@ -13,7 +13,7 @@ stages:
 
 variables:
   QT_VERSION: "6.8.2"
-  ARACHNEL_SDK_REF: "master"
+  ARACHNEL_SDK_REF: "v0.1.4"
   ARACHNEL_SKIP_FREETP_CATALOG_FETCH: "1"
 
 build:linux:
