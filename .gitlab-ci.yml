@@ -96,4 +96,4 @@ release:
         --name "FreeTP plugin ${CI_COMMIT_TAG}" \
         --tag-name "${CI_COMMIT_TAG}" \
         --description "$(cat release-notes.md)" \
-        --assets-links "[{\"name\":\"freetp.arach\",\"url\":\"${CI_PROJECT_URL}/-/package/generic/freetp/${CI_COMMIT_TAG}/freetp.arach\",\"link_type\":\"package\"}]"
+        --assets-link "[{\"name\":\"freetp.arach\",\"url\":\"${CI_PROJECT_URL}/-/packages/generic/freetp/${CI_COMMIT_TAG}/freetp.arach\",\"link_type\":\"package\"}]"
