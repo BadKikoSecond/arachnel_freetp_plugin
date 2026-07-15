@@ -85,10 +85,13 @@ release:
 
       Requires Arachnel plugin API v2.
       EOF
-  release:
-    tag_name: $CI_COMMIT_TAG
-    name: FreeTP plugin $CI_COMMIT_TAG
-    description: ./release-notes.md
-    assets:
-      paths:
-        - freetp.arach
+    - |
+      curl --fail --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+        --upload-file freetp.arach \
+        "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/freetp/${CI_COMMIT_TAG}/freetp.arach"
+    - |
+      release-cli create \
+        --name "FreeTP plugin ${CI_COMMIT_TAG}" \
+        --tag-name "${CI_COMMIT_TAG}" \
+        --description "$(cat release-notes.md)" \
+        --assets-links "[{\"name\":\"freetp.arach\",\"url\":\"${CI_PROJECT_URL}/-/package/generic/freetp/${CI_COMMIT_TAG}/freetp.arach\",\"link_type\":\"package\"}]"
