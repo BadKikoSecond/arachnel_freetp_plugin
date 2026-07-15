@@ -23,8 +23,12 @@ fi
 
 if [[ ! -f "${QT_PATH}/lib/cmake/Qt6/Qt6Config.cmake" ]]; then
   echo "==> Install Qt ${QT_VERSION} (gcc_64)"
-  pip install --user aqtinstall
-  export PATH="${HOME}/.local/bin:${PATH}"
+  AQT_VENV="${ROOT}/.ci/aqt-venv"
+  if [[ ! -x "${AQT_VENV}/bin/aqt" ]]; then
+    python3 -m venv "${AQT_VENV}"
+    "${AQT_VENV}/bin/pip" install --upgrade pip aqtinstall
+  fi
+  export PATH="${AQT_VENV}/bin:${PATH}"
   aqt install-qt linux desktop "${QT_VERSION}" gcc_64 \
     -O "$(dirname "$(dirname "${QT_PATH}")")" \
     --archives qtbase qtdeclarative qttools
