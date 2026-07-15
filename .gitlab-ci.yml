@@ -72,7 +72,7 @@ release:
     - job: package:universal
       artifacts: true
   before_script:
-    - apk add --no-cache curl
+    - apk add --no-cache curl jq
   script:
     - cp dist/universal/freetp.arach freetp.arach
     - |
@@ -92,8 +92,15 @@ release:
         --upload-file freetp.arach \
         "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/freetp/${CI_COMMIT_TAG}/freetp.arach"
     - |
+      PACKAGE_ID="$(curl -fsS --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+        "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages?package_type=generic&package_name=freetp&package_version=${CI_COMMIT_TAG}" \
+        | jq -r '.[0].id')"
+      FILE_ID="$(curl -fsS --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+        "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/${PACKAGE_ID}/package_files" \
+        | jq -r '.[0].id')"
+      DOWNLOAD_URL="${CI_PROJECT_URL}/-/package_files/${FILE_ID}/download"
       release-cli create \
         --name "FreeTP plugin ${CI_COMMIT_TAG}" \
         --tag-name "${CI_COMMIT_TAG}" \
         --description "$(cat release-notes.md)" \
-        --assets-link "[{\"name\":\"freetp.arach\",\"url\":\"${CI_PROJECT_URL}/-/packages/generic/freetp/${CI_COMMIT_TAG}/freetp.arach\",\"link_type\":\"package\"}]"
+        --assets-link "[{\"name\":\"freetp.arach\",\"url\":\"${DOWNLOAD_URL}\",\"link_type\":\"package\"}]"
