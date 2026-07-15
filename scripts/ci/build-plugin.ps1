@@ -31,7 +31,7 @@ if (-not (Test-Path -LiteralPath (Join-Path $QtPrefix "lib\cmake\Qt6\Qt6Config.c
     Write-Host "==> Install Qt $QtVersion (msvc2022_64)"
     pip install aqtinstall
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-    aqt install-qt windows desktop $QtVersion win64_msvc2022_64 -O $QtRoot --modules qtbase
+    aqt install-qt windows desktop $QtVersion win64_msvc2022_64 -O $QtRoot
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 

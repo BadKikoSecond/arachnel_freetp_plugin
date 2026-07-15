@@ -30,8 +30,7 @@ if [[ ! -f "${QT_PATH}/lib/cmake/Qt6/Qt6Config.cmake" ]]; then
   fi
   export PATH="${AQT_VENV}/bin:${PATH}"
   aqt install-qt linux desktop "${QT_VERSION}" gcc_64 \
-    -O "$(dirname "$(dirname "${QT_PATH}")")" \
-    --modules qtbase
+    -O "$(dirname "$(dirname "${QT_PATH}")")"
 fi
 
 export ARACHNEL_SKIP_FREETP_CATALOG_FETCH="${ARACHNEL_SKIP_FREETP_CATALOG_FETCH:-1}"
