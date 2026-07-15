@@ -34,8 +34,10 @@ build:windows:
   stage: build
   tags:
     - saas-windows-medium-amd64
+  timeout: 2h
   before_script:
-    - choco install cmake git python -y --no-progress
+    - if (-not (Get-Command python -ErrorAction SilentlyContinue)) { choco install python3 -y --no-progress --execution-timeout 1200 }
+    - python --version
   script:
     - pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/ci/build-plugin.ps1
   artifacts:
