@@ -1,5 +1,6 @@
 build*/
 dist/
+.ci/
 _staging*/
 *.arach
 games-arachnel.json

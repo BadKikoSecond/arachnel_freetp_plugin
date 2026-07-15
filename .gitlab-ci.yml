@@ -1,0 +1,77 @@
+# Tag a commit on main to build and publish freetp.arach for Windows + Linux.
+# Example: git tag v1.0.0 && git push BadKiko v1.0.0
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+(-[\w.]+)?$/
+    - when: never
+
+stages:
+  - build
+  - release
+
+variables:
+  QT_VERSION: "6.8.2"
+  ARACHNEL_SDK_REF: "master"
+  ARACHNEL_SKIP_FREETP_CATALOG_FETCH: "1"
+
+build:linux:
+  stage: build
+  image: ubuntu:24.04
+  before_script:
+    - apt-get update
+    - apt-get install -y --no-install-recommends ca-certificates cmake g++ git ninja-build patchelf python3 python3-pip python3-venv zip
+  script:
+    - bash scripts/ci/build-plugin.sh
+  artifacts:
+    name: freetp-linux-$CI_COMMIT_TAG
+    paths:
+      - dist/linux/freetp.arach
+    expire_in: 30 days
+
+build:windows:
+  stage: build
+  tags:
+    - saas-windows-medium-amd64
+  before_script:
+    - choco install cmake git python -y --no-progress
+  script:
+    - pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/ci/build-plugin.ps1
+  artifacts:
+    name: freetp-windows-$CI_COMMIT_TAG
+    paths:
+      - dist/windows/freetp.arach
+    expire_in: 30 days
+
+release:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  needs:
+    - job: build:linux
+      artifacts: true
+    - job: build:windows
+      artifacts: true
+  script:
+    - cp dist/linux/freetp.arach freetp-linux.arach
+    - cp dist/windows/freetp.arach freetp-windows.arach
+    - |
+      cat > release-notes.md <<EOF
+      # FreeTP plugin ${CI_COMMIT_TAG}
+
+      Install in Arachnel: **Settings → Plugins** → \`.arach\` file.
+
+      - **Windows:** \`freetp-windows.arach\` (MSVC, matches Arachnel Windows release)
+      - **Linux:** \`freetp-linux.arach\`
+
+      Requires Arachnel plugin API v2.
+      EOF
+  release:
+    tag_name: $CI_COMMIT_TAG
+    name: FreeTP plugin $CI_COMMIT_TAG
+    description: ./release-notes.md
+    assets:
+      links:
+        - name: freetp-$CI_COMMIT_TAG-windows.arach
+          filepath: ./freetp-windows.arach
+        - name: freetp-$CI_COMMIT_TAG-linux.arach
+          filepath: ./freetp-linux.arach

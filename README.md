@@ -123,6 +123,38 @@ Rebuild after Arachnel changes `ARACHNEL_PLUGIN_API_VERSION` or `CatalogEntry` l
 
 ---
 
+## Releases (CI/CD)
+
+Pushing a **semver tag** on `main` triggers [GitLab CI](.gitlab-ci.yml):
+
+```bash
+git tag v1.0.0
+git push BadKiko v1.0.0
+```
+
+Pipeline builds `freetp.arach` for **Windows (MSVC)** and **Linux**, then publishes a GitLab Release with both artifacts.  
+`plugin.json` → `version` is set from the tag (`v1.0.0` → `1.0.0`) during CI only.
+
+| Tag format | Example |
+|------------|---------|
+| Semver | `v1.0.0`, `v1.0.1-beta` |
+
+Windows job uses GitLab **SaaS Windows** runners (`saas-windows-medium-amd64`). Linux uses shared runners.
+
+Manual/local CI scripts:
+
+```powershell
+# Windows (MSVC, same as Arachnel release)
+pwsh scripts/ci/build-plugin.ps1
+
+# Linux
+bash scripts/ci/build-plugin.sh
+```
+
+Environment variable `ARACHNEL_SDK_REF` (default `master`) selects the Arachnel SDK git ref.
+
+---
+
 ## Environment variables
 
 | Variable | Description |
