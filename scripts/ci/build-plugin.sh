@@ -7,7 +7,7 @@ SDK_DIR="${ARACHNEL_SDK_DIR:-${ROOT}/.ci/arachnel-sdk}"
 SDK_REF="${ARACHNEL_SDK_REF:-master}"
 QT_VERSION="${QT_VERSION:-6.8.2}"
 QT_ARCH="${QT_ARCH:-linux_gcc_64}"
-QT_PATH="${QT_INSTALL_DIR:-${ROOT}/.ci/qt/${QT_VERSION}/${QT_ARCH}}"
+QT_PATH="${QT_INSTALL_DIR:-${ROOT}/.ci/qt/${QT_VERSION}/gcc_64}"
 DIST="${ROOT}/dist/linux"
 
 cd "${ROOT}"
