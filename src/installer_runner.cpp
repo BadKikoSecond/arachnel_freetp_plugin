@@ -46,35 +46,44 @@ QByteArray utf16LeBytes(const QString& text)
     return bytes;
 }
 
-bool shortcutPointsToInstallPath(const QString& shortcutPath, const QString& installPath,
-                                 const QString& gameExecutable)
+bool shortcutDataContains(const QByteArray& data, const QString& needle)
 {
+    if (needle.isEmpty())
+        return false;
+    if (data.contains(needle.toUtf8()))
+        return true;
+    if (data.contains(utf16LeBytes(needle)))
+        return true;
+    const QString native = QDir::toNativeSeparators(needle);
+    return data.contains(utf16LeBytes(native)) || data.contains(native.toUtf8());
+}
+
+// FreeTP installers drop a promo desktop shortcut ("Игры По Сети" → FreeTP.Org.url).
+// Keep the real game shortcut; only remove that promo.
+bool isFreetpPromoShortcut(const QString& shortcutPath)
+{
+    const QString baseName = QFileInfo(shortcutPath).completeBaseName().toLower();
+    if (baseName.contains(QStringLiteral("игры по сети"))
+        || baseName.contains(QStringLiteral("freetp.org"))
+        || baseName == QStringLiteral("freetp")) {
+        return true;
+    }
+
     QFile file(shortcutPath);
     if (!file.open(QIODevice::ReadOnly))
         return false;
 
     const QByteArray data = file.readAll();
-    QStringList needles;
-    const auto addNeedle = [&needles](const QString& value) {
-        if (value.isEmpty())
-            return;
-        needles.append(value);
-        needles.append(QDir::toNativeSeparators(value));
-        needles.append(QDir::fromNativeSeparators(value));
+    static const QStringList kPromoNeedles = {
+        QStringLiteral("FreeTP.Org.url"),
+        QStringLiteral("FreeTP.Org"),
+        QStringLiteral("freetp.org"),
+        QStringLiteral("freetp.org.url"),
     };
-
-    addNeedle(installPath);
-    addNeedle(gameExecutable);
-
-    for (const QString& needle : needles) {
-        if (data.contains(needle.toUtf8()))
-            return true;
-        if (data.contains(utf16LeBytes(needle)))
-            return true;
-        if (data.contains(utf16LeBytes(QDir::toNativeSeparators(needle))))
+    for (const QString& needle : kPromoNeedles) {
+        if (shortcutDataContains(data, needle))
             return true;
     }
-
     return false;
 }
 
@@ -196,7 +205,6 @@ QString installInnoSetup(const QString& setupPath, const QString& targetPath, QS
         QStringLiteral("/SUPPRESSMSGBOXES"),
         QStringLiteral("/NORESTART"),
         QStringLiteral("/SP-"),
-        QStringLiteral("/MERGETASKS=!desktopicon"),
         innoPathArg(QStringLiteral("/DIR="), targetPath),
         innoPathArg(QStringLiteral("/LOG="), logPath),
     };
@@ -246,7 +254,6 @@ QString installInnoOverlay(const QString& setupPath, const QString& targetPath, 
         QStringLiteral("/SUPPRESSMSGBOXES"),
         QStringLiteral("/NORESTART"),
         QStringLiteral("/SP-"),
-        QStringLiteral("/MERGETASKS=!desktopicon"),
         innoPathArg(QStringLiteral("/DIR="), targetPath),
         innoPathArg(QStringLiteral("/LOG="), logPath),
     };
@@ -270,17 +277,20 @@ void cleanupInnoSideEffects(const QString& installPath)
     if (installPath.isEmpty())
         return;
 
-    const QString gameExecutable = findGameExecutable(installPath);
-
-    QDirIterator urls(installPath, {QStringLiteral("*.url")}, QDir::Files);
-    while (urls.hasNext())
-        QFile::remove(urls.next());
+    QDirIterator urls(installPath, {QStringLiteral("*.url")}, QDir::Files,
+                      QDirIterator::Subdirectories);
+    while (urls.hasNext()) {
+        const QString urlPath = urls.next();
+        const QString lower = QFileInfo(urlPath).fileName().toLower();
+        if (lower.contains(QStringLiteral("freetp")))
+            QFile::remove(urlPath);
+    }
 
     for (const QString& desktop : desktopRoots()) {
         QDirIterator shortcuts(desktop, {QStringLiteral("*.lnk")}, QDir::Files);
         while (shortcuts.hasNext()) {
             const QString shortcutPath = shortcuts.next();
-            if (shortcutPointsToInstallPath(shortcutPath, installPath, gameExecutable))
+            if (isFreetpPromoShortcut(shortcutPath))
                 QFile::remove(shortcutPath);
         }
     }

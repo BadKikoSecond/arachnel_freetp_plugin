@@ -7,12 +7,18 @@
 #include "catalog_parser.h"
 #include "install_heuristics.h"
 
-#include <QDirIterator>
-
 #include <QDateTime>
 #include <QDir>
+#include <QDirIterator>
+#include <QEventLoop>
 #include <QFile>
 #include <QFileInfo>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QNetworkRequest>
+#include <QUrl>
 
 namespace freetp {
 
@@ -20,13 +26,57 @@ namespace {
 
 constexpr auto kSourceId = "freetp";
 
+QString readManifestString(const QString& rootPath, const QString& key)
+{
+    QFile file(rootPath + QStringLiteral("/plugin.json"));
+    if (!file.open(QIODevice::ReadOnly))
+        return {};
+    const QJsonObject obj = QJsonDocument::fromJson(file.readAll()).object();
+    return obj.value(key).toString().trimmed();
+}
+
+QByteArray fetchCatalogUrl(const QUrl& url)
+{
+    if (!url.isValid() || url.host().isEmpty())
+        return {};
+
+    QNetworkAccessManager nam;
+    QNetworkRequest request(url);
+    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
+                         QNetworkRequest::NoLessSafeRedirectPolicy);
+    request.setHeader(QNetworkRequest::UserAgentHeader, QStringLiteral("Arachnel-FreeTP/1"));
+
+    QNetworkReply* reply = nam.get(request);
+    QEventLoop loop;
+    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    loop.exec();
+
+    QByteArray body;
+    if (reply->error() == QNetworkReply::NoError)
+        body = reply->readAll();
+    reply->deleteLater();
+    return body;
+}
+
 QByteArray readCatalogBytes(const QString& rootPath)
 {
     const QString localPath = rootPath + QStringLiteral("/games-arachnel.json");
     QFile localFile(localPath);
-    if (!localFile.open(QIODevice::ReadOnly))
+    if (localFile.open(QIODevice::ReadOnly)) {
+        const QByteArray local = localFile.readAll();
+        if (!local.isEmpty())
+            return local;
+    }
+
+    const QString catalogUrl = readManifestString(rootPath, QStringLiteral("catalogUrl"));
+    const QByteArray remote = fetchCatalogUrl(QUrl(catalogUrl));
+    if (remote.isEmpty())
         return {};
-    return localFile.readAll();
+
+    QFile cache(localPath);
+    if (cache.open(QIODevice::WriteOnly | QIODevice::Truncate))
+        cache.write(remote);
+    return remote;
 }
 
 bool shouldUseInnoInstaller(const QString& contentRoot,
@@ -83,7 +133,8 @@ QString FreetpPlugin::description() const
 
 QString FreetpPlugin::version() const
 {
-    return QStringLiteral("1.0.0");
+    const QString fromManifest = readManifestString(m_rootPath, QStringLiteral("version"));
+    return !fromManifest.isEmpty() ? fromManifest : QStringLiteral("1.0.0");
 }
 
 QStringList FreetpPlugin::capabilities() const

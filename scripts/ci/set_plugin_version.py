@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Set plugin.json version from a git tag (e.g. v1.0.0 -> 1.0.0)."""
+"""Set plugin.json version from a git tag (e.g. v1.0.0 -> 1.0.0).
+
+C++ FreetpPlugin::version() reads plugin.json at runtime, so only the manifest
+needs updating for release tags.
+"""
 
 from __future__ import annotations
 

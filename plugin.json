@@ -1,7 +1,7 @@
 {
   "id": "freetp",
   "name": "FreeTP",
-  "version": "1.0.0",
+  "version": "1.0.15",
   "apiVersion": 2,
   "library": "freetp_plugin",
   "iconName": "storefront",
