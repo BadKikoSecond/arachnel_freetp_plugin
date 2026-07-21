@@ -300,7 +300,7 @@ QString installPortableFromDownload(const QString& downloadPath, const QString& 
 
     QString exe = findGameExecutable(targetPath);
     if (!exe.isEmpty())
-        return QFileInfo(exe).absolutePath();
+        return QDir(targetPath).absolutePath();
 
     exe = findGameExecutable(sourceRoot);
     if (exe.isEmpty()) {
@@ -320,7 +320,8 @@ QString installPortableFromDownload(const QString& downloadPath, const QString& 
         return {};
     }
 
-    return QFileInfo(exe).absolutePath();
+    // Always keep installPath = configured library folder so updates wipe/replace the same tree.
+    return QDir(targetPath).absolutePath();
 }
 
 bool installAddonOverlay(const QString& downloadPath, const QString& gameInstallPath,

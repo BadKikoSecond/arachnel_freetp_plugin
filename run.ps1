@@ -63,7 +63,8 @@ cmake --build $buildPath --target freetp_plugin
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $bundle = Join-Path $buildPath "plugin-bundle"
-$dest = Join-Path $env:APPDATA "PetWork\Arachnel\plugins\freetp"
+# Match Arachnel AppDataLocation (no organizationName → %APPDATA%\Arachnel).
+$dest = Join-Path $env:APPDATA "Arachnel\plugins\freetp"
 if (Test-Path (Join-Path $bundle "freetp_plugin.dll")) {
     New-Item -ItemType Directory -Force -Path $dest | Out-Null
     Copy-Item -Path (Join-Path $bundle "*") -Destination $dest -Recurse -Force
