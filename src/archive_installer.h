@@ -16,6 +16,10 @@ bool extractArchivesInDirectory(const QString& downloadDir, const QString& destD
 QString installPortableFromDownload(const QString& downloadPath, const QString& targetPath,
                                     QString* errorOut);
 
+/** Move game files from a misplaced Inno destination (e.g. Steam\\common) into targetPath. */
+bool relocateInstalledContent(const QString& sourceRoot, const QString& targetPath,
+                              QString* errorOut);
+
 bool installAddonOverlay(const QString& downloadPath, const QString& gameInstallPath,
                          QString* errorOut);
 

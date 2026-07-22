@@ -19,23 +19,22 @@ include(${ARACHNEL_SDK_DIR}/cmake/ArachnelPluginSdk.cmake)
 arachnel_plugin_sdk_init(${ARACHNEL_SDK_DIR})
 
 # Catalog lives in freetp-hydra-link; plugin.json catalogUrl is the runtime source of truth.
-# Optional: download a snapshot at configure time to bundle offline copies inside .arach.
+# Optional offline snapshot for .arach bundles: -DFREETP_BUNDLE_CATALOG=ON
+option(FREETP_BUNDLE_CATALOG "Download games-arachnel.json into the plugin bundle" OFF)
 set(FREETP_CATALOG "${CMAKE_CURRENT_SOURCE_DIR}/games-arachnel.json")
 set(FREETP_CATALOG_URL
     "https://gitlab.com/BadKiko/freetp-hydra-link/-/raw/main/games-arachnel.json?ref_type=heads")
 
-if(NOT "$ENV{ARACHNEL_SKIP_FREETP_CATALOG_FETCH}" STREQUAL "1")
+if(FREETP_BUNDLE_CATALOG)
     message(STATUS "freetp: fetching games-arachnel.json from freetp-hydra-link ...")
     file(DOWNLOAD "${FREETP_CATALOG_URL}" "${FREETP_CATALOG}" STATUS _dl_status TIMEOUT 180)
     list(GET _dl_status 0 _dl_code)
     if(NOT _dl_code EQUAL 0)
         message(WARNING
-            "freetp: could not download games-arachnel.json (plugin still works via catalogUrl in plugin.json)")
+            "freetp: could not download games-arachnel.json (plugin still works via catalogUrl)")
     endif()
-elseif(EXISTS "${FREETP_CATALOG}")
-    message(STATUS "freetp: using existing games-arachnel.json (fetch skipped)")
 else()
-    message(STATUS "freetp: no local catalog; runtime feed from plugin.json catalogUrl")
+    message(STATUS "freetp: catalog fetched at runtime from plugin.json catalogUrl (5 min cache)")
 endif()
 
 add_library(freetp_plugin SHARED

@@ -32,7 +32,8 @@ if [[ ! -f "${QT_PATH}/lib/cmake/Qt6/Qt6Config.cmake" ]]; then
   AQT_VENV="${ROOT}/.ci/aqt-venv"
   if [[ ! -x "${AQT_VENV}/bin/aqt" ]]; then
     python3 -m venv "${AQT_VENV}"
-    "${AQT_VENV}/bin/pip" install --upgrade pip aqtinstall
+    # Qt 6.11+ needs aqtinstall newer than PyPI 3.3.0
+    "${AQT_VENV}/bin/pip" install --upgrade pip "git+https://github.com/miurahr/aqtinstall.git"
   fi
   export PATH="${AQT_VENV}/bin:${PATH}"
   # shellcheck disable=SC2206

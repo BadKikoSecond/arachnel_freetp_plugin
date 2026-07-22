@@ -216,8 +216,10 @@ QString portableSourceRoot(const QString& downloadPath)
     return downloadPath;
 }
 
-bool relocatePortableContent(const QString& sourceRoot, const QString& targetPath,
-                             QString* errorOut)
+} // namespace
+
+bool relocateInstalledContent(const QString& sourceRoot, const QString& targetPath,
+                              QString* errorOut)
 {
     QDir source(sourceRoot);
     QDir target(targetPath);
@@ -260,8 +262,6 @@ bool relocatePortableContent(const QString& sourceRoot, const QString& targetPat
 
     return true;
 }
-
-} // namespace
 
 QString installPortableFromDownload(const QString& downloadPath, const QString& targetPath,
                                     QString* errorOut)
@@ -310,7 +310,7 @@ QString installPortableFromDownload(const QString& downloadPath, const QString& 
     }
 
     const QString gameRoot = QFileInfo(exe).absolutePath();
-    if (!relocatePortableContent(gameRoot, targetPath, errorOut))
+    if (!relocateInstalledContent(gameRoot, targetPath, errorOut))
         return {};
 
     exe = findGameExecutable(targetPath);

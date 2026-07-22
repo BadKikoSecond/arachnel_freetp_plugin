@@ -63,12 +63,17 @@ cmake --build $buildPath --target freetp_plugin
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $bundle = Join-Path $buildPath "plugin-bundle"
-# Match Arachnel AppDataLocation (no organizationName → %APPDATA%\Arachnel).
-$dest = Join-Path $env:APPDATA "Arachnel\plugins\freetp"
+# AppDataLocation with org+app = %APPDATA%\Arachnel\Arachnel; keep legacy path too.
+$destCandidates = @(
+    (Join-Path $env:APPDATA "Arachnel\Arachnel\plugins\freetp"),
+    (Join-Path $env:APPDATA "Arachnel\plugins\freetp")
+)
 if (Test-Path (Join-Path $bundle "freetp_plugin.dll")) {
-    New-Item -ItemType Directory -Force -Path $dest | Out-Null
-    Copy-Item -Path (Join-Path $bundle "*") -Destination $dest -Recurse -Force
-    Write-Host "Deployed to $dest"
+    foreach ($dest in $destCandidates) {
+        New-Item -ItemType Directory -Force -Path $dest | Out-Null
+        Copy-Item -Path (Join-Path $bundle "*") -Destination $dest -Recurse -Force
+        Write-Host "Deployed to $dest"
+    }
 }
 
 Write-Host "Done. .arach: $(Join-Path $buildPath 'dist\freetp.arach')"

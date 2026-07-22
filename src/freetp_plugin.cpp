@@ -18,6 +18,7 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QStandardPaths>
 #include <QUrl>
 
 namespace freetp {
@@ -25,6 +26,7 @@ namespace freetp {
 namespace {
 
 constexpr auto kSourceId = "freetp";
+constexpr qint64 kCatalogCacheTtlMs = 5 * 60 * 1000;
 
 QString readManifestString(const QString& rootPath, const QString& key)
 {
@@ -58,25 +60,67 @@ QByteArray fetchCatalogUrl(const QUrl& url)
     return body;
 }
 
+QString writableCatalogCachePath()
+{
+    const QString base = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    if (base.isEmpty())
+        return {};
+    return base + QStringLiteral("/plugin-catalog-cache/freetp/games-arachnel.json");
+}
+
+bool catalogCacheIsFresh(const QString& path)
+{
+    const QFileInfo info(path);
+    if (!info.exists() || info.size() <= 0)
+        return false;
+    const qint64 ageMs = info.lastModified().msecsTo(QDateTime::currentDateTime());
+    return ageMs >= 0 && ageMs < kCatalogCacheTtlMs;
+}
+
+QByteArray readFileBytes(const QString& path)
+{
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly))
+        return {};
+    return file.readAll();
+}
+
+bool writeCatalogCache(const QString& path, const QByteArray& payload)
+{
+    if (path.isEmpty() || payload.isEmpty())
+        return false;
+    if (!QDir().mkpath(QFileInfo(path).absolutePath()))
+        return false;
+    QFile cache(path);
+    if (!cache.open(QIODevice::WriteOnly | QIODevice::Truncate))
+        return false;
+    return cache.write(payload) == payload.size();
+}
+
 QByteArray readCatalogBytes(const QString& rootPath)
 {
-    const QString localPath = rootPath + QStringLiteral("/games-arachnel.json");
-    QFile localFile(localPath);
-    if (localFile.open(QIODevice::ReadOnly)) {
-        const QByteArray local = localFile.readAll();
-        if (!local.isEmpty())
-            return local;
+    const QString cachePath = writableCatalogCachePath();
+
+    // Fresh AppData cache (5 minutes) — do not pin a JSON inside the plugin folder.
+    if (catalogCacheIsFresh(cachePath)) {
+        const QByteArray cached = readFileBytes(cachePath);
+        if (!cached.isEmpty())
+            return cached;
     }
 
     const QString catalogUrl = readManifestString(rootPath, QStringLiteral("catalogUrl"));
     const QByteArray remote = fetchCatalogUrl(QUrl(catalogUrl));
-    if (remote.isEmpty())
-        return {};
+    if (!remote.isEmpty()) {
+        writeCatalogCache(cachePath, remote);
+        return remote;
+    }
 
-    QFile cache(localPath);
-    if (cache.open(QIODevice::WriteOnly | QIODevice::Truncate))
-        cache.write(remote);
-    return remote;
+    // Offline: prefer stale AppData cache, then optional bundled snapshot.
+    const QByteArray stale = readFileBytes(cachePath);
+    if (!stale.isEmpty())
+        return stale;
+
+    return readFileBytes(rootPath + QStringLiteral("/games-arachnel.json"));
 }
 
 bool shouldUseInnoInstaller(const QString& contentRoot,
@@ -146,20 +190,24 @@ QStringList FreetpPlugin::capabilities() const
 void FreetpPlugin::resetCatalogCache()
 {
     m_catalogLoaded = false;
+    m_catalogLoadedAt = {};
     m_catalog.clear();
 }
 
 void FreetpPlugin::ensureCatalogLoaded() const
 {
-    if (m_catalogLoaded)
-        return;
-    m_catalogLoaded = true;
+    if (m_catalogLoaded && m_catalogLoadedAt.isValid()) {
+        const qint64 ageMs = m_catalogLoadedAt.msecsTo(QDateTime::currentDateTime());
+        if (ageMs >= 0 && ageMs < kCatalogCacheTtlMs)
+            return;
+    }
 
     const QByteArray payload = readCatalogBytes(m_rootPath);
-    if (payload.isEmpty())
-        return;
-
-    m_catalog = arachnel::core::parseCatalogFeed(payload, id());
+    m_catalog.clear();
+    if (!payload.isEmpty())
+        m_catalog = arachnel::core::parseCatalogFeed(payload, id());
+    m_catalogLoaded = true;
+    m_catalogLoadedAt = QDateTime::currentDateTime();
 }
 
 QVector<arachnel::core::CatalogEntry> FreetpPlugin::catalog() const

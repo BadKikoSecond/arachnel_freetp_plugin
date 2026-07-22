@@ -2,6 +2,7 @@
 
 #include "plugin_interface.h"
 
+#include <QDateTime>
 #include <QString>
 #include <QVector>
 
@@ -47,6 +48,6 @@ private:
     QString m_rootPath;
     mutable QVector<arachnel::core::CatalogEntry> m_catalog;
     mutable bool m_catalogLoaded = false;
+    mutable QDateTime m_catalogLoadedAt;
 };
-
 } // namespace freetp
