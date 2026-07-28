@@ -172,7 +172,7 @@ QString FreetpPlugin::name() const
 
 QString FreetpPlugin::description() const
 {
-    return QStringLiteral("Торрент-каталог FreeTP — portable и Inno Setup");
+    return QStringLiteral("Russian site similar to online-fix.me");
 }
 
 QString FreetpPlugin::version() const
