@@ -2,16 +2,21 @@
 set -euo pipefail
 
 ENV_FILE="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/launcher-toolchain.env}"
-if [[ ! -f "${ENV_FILE}" ]]; then
-  echo "Missing toolchain lock file: ${ENV_FILE}" >&2
-  exit 1
-fi
+[[ -f "${ENV_FILE}" ]] || { echo "Missing toolchain lock: ${ENV_FILE}" >&2; exit 1; }
 
 while IFS= read -r line || [[ -n "${line}" ]]; do
   line="${line%%#*}"
-  line="$(echo "${line}" | xargs)"
+  line="${line#"${line%%[![:space:]]*}"}"
+  line="${line%"${line##*[![:space:]]}"}"
   [[ -z "${line}" ]] && continue
-  if [[ "${line}" == *=* ]]; then
-    export "${line?}"
+  [[ "${line}" == *=* ]] || continue
+  key="${line%%=*}"
+  value="${line#*=}"
+  key="${key%"${key##*[![:space:]]}"}"
+  if [[ "${value}" == \"*\" ]]; then
+    value="${value:1:${#value}-2}"
+  elif [[ "${value}" == \'*\' ]]; then
+    value="${value:1:${#value}-2}"
   fi
+  export "${key}=${value}"
 done < "${ENV_FILE}"
