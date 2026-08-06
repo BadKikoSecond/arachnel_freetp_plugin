@@ -30,6 +30,7 @@ build:linux:
   artifacts:
     name: freetp-linux-$CI_COMMIT_TAG
     paths:
+      - .ci/qt/
       - dist/linux/freetp.arach
     expire_in: 7 days
 
@@ -98,6 +99,8 @@ package:universal:
   tags:
     - linux
   needs:
+    - job: build:linux
+      artifacts: true
     - job: package:universal
       artifacts: true
   script:
