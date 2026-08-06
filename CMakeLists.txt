@@ -18,6 +18,12 @@ find_package(Qt6 REQUIRED COMPONENTS Core Network)
 include(${ARACHNEL_SDK_DIR}/cmake/ArachnelPluginSdk.cmake)
 arachnel_plugin_sdk_init(${ARACHNEL_SDK_DIR})
 
+# ProtonManager is QObject; plugin SDK clone may not AUTOMOC it. windows_runner needs the vtable.
+set_target_properties(arachnel_plugin_sdk PROPERTIES AUTOMOC ON)
+target_sources(arachnel_plugin_sdk PRIVATE
+    "${ARACHNEL_SDK_DIR}/src/core/runtime/proton_manager.h"
+    "${ARACHNEL_SDK_DIR}/src/core/runtime/proton_manager_download.cpp")
+
 # Catalog lives in freetp-hydra-link; plugin.json catalogUrl is the runtime source of truth.
 # Optional offline snapshot for .arach bundles: -DFREETP_BUNDLE_CATALOG=ON
 option(FREETP_BUNDLE_CATALOG "Download games-arachnel.json into the plugin bundle" OFF)
@@ -46,7 +52,14 @@ add_library(freetp_plugin SHARED
 )
 
 target_include_directories(freetp_plugin PRIVATE src)
-target_link_libraries(freetp_plugin PRIVATE arachnel_plugin_sdk Qt6::Core Qt6::Network)
+# WHOLE_ARCHIVE: Linux ar is single-pass; windows_runner needs ProtonManager from the same .a
+if(UNIX AND NOT APPLE)
+    target_link_libraries(freetp_plugin PRIVATE
+        "$<LINK_LIBRARY:WHOLE_ARCHIVE,arachnel_plugin_sdk>"
+        Qt6::Core Qt6::Network)
+else()
+    target_link_libraries(freetp_plugin PRIVATE arachnel_plugin_sdk Qt6::Core Qt6::Network)
+endif()
 
 # Prefer this DSO's CatalogEntry special members over host interposition (Linux).
 if(UNIX AND NOT APPLE)
