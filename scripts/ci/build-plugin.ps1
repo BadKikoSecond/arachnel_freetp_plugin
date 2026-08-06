@@ -61,7 +61,11 @@ if (-not (Test-Path -LiteralPath (Join-Path $QtPrefix "lib\cmake\Qt6\Qt6Config.c
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     }
     # PyPI 3.3.0 cannot resolve Qt 6.11+ Windows layout — install from git master.
-    & $AqtPython -m pip install --upgrade pip "git+https://github.com/miurahr/aqtinstall.git"
+    & $AqtPython -m pip install --upgrade pip setuptools wheel
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    & $AqtPython -m pip install 'setuptools_scm[toml]>=9.2.0'
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    & $AqtPython -m pip install --no-build-isolation "git+https://github.com/miurahr/aqtinstall.git"
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     $moduleArgs = @()
     foreach ($module in $QtModules) {
