@@ -53,6 +53,7 @@ cmake -S "${ROOT}" -B "${BUILD}" -G Ninja \
 
 echo "==> Build freetp_plugin"
 cmake --build "${BUILD}" --target freetp_plugin -j"$(nproc)"
+bash "${ROOT}/scripts/ci/check-linux-runtime.sh" "${BUILD}/plugin-bundle/libfreetp_plugin.so"
 
 mkdir -p "${DIST}"
 cp -f "${BUILD}/dist/freetp.arach" "${DIST}/freetp.arach"

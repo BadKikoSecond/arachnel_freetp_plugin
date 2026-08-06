@@ -68,9 +68,10 @@ for file in "${LIN_BUNDLE}"/*; do
   fi
 done
 
-if [[ -f "${LIN_BUNDLE}/libfreetp_plugin.so" ]]; then
-  cp -a "${LIN_BUNDLE}/libfreetp_plugin.so" "${MERGED}/"
-fi
+for so in "${LIN_BUNDLE}"/lib*.so*; do
+  [[ -f "${so}" ]] || continue
+  cp -a "${so}" "${MERGED}/"
+done
 
 required=(
   "${MERGED}/plugin.json"

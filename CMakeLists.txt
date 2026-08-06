@@ -51,6 +51,11 @@ target_link_libraries(freetp_plugin PRIVATE arachnel_plugin_sdk Qt6::Core Qt6::N
 # Prefer this DSO's CatalogEntry special members over host interposition (Linux).
 if(UNIX AND NOT APPLE)
     target_link_options(freetp_plugin PRIVATE "LINKER:-Bsymbolic")
+    add_custom_command(TARGET freetp_plugin POST_BUILD
+        COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/scripts/ci/linux-runtime-bundle.sh"
+                "$<TARGET_FILE:freetp_plugin>"
+        COMMENT "Bundle Linux runtime deps and set RUNPATH=\$ORIGIN"
+        VERBATIM)
 endif()
 
 set_target_properties(freetp_plugin PROPERTIES
