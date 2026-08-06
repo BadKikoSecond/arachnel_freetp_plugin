@@ -52,10 +52,10 @@ add_library(freetp_plugin SHARED
 )
 
 target_include_directories(freetp_plugin PRIVATE src)
-# WHOLE_ARCHIVE: Linux ar is single-pass; windows_runner needs ProtonManager from the same .a
+# start-group: Linux ar is single-pass; windows_runner needs ProtonManager from the same .a
 if(UNIX AND NOT APPLE)
     target_link_libraries(freetp_plugin PRIVATE
-        "$<LINK_LIBRARY:WHOLE_ARCHIVE,arachnel_plugin_sdk>"
+        "-Wl,--start-group" arachnel_plugin_sdk "-Wl,--end-group"
         Qt6::Core Qt6::Network)
 else()
     target_link_libraries(freetp_plugin PRIVATE arachnel_plugin_sdk Qt6::Core Qt6::Network)
