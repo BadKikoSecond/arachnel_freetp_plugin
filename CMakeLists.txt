@@ -48,6 +48,11 @@ add_library(freetp_plugin SHARED
 target_include_directories(freetp_plugin PRIVATE src)
 target_link_libraries(freetp_plugin PRIVATE arachnel_plugin_sdk Qt6::Core Qt6::Network)
 
+# Prefer this DSO's CatalogEntry special members over host interposition (Linux).
+if(UNIX AND NOT APPLE)
+    target_link_options(freetp_plugin PRIVATE "LINKER:-Bsymbolic")
+endif()
+
 set_target_properties(freetp_plugin PROPERTIES
     OUTPUT_NAME "freetp_plugin"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugin-bundle"

@@ -28,6 +28,8 @@ arachnel::core::ISourcePlugin* arachnel_plugin_create(const char* plugin_root_ut
 
 void arachnel_plugin_destroy(arachnel::core::ISourcePlugin* plugin)
 {
+    if (plugin)
+        plugin->resetCatalogCache();
     delete plugin;
 }
 

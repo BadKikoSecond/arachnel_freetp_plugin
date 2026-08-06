@@ -191,7 +191,13 @@ void FreetpPlugin::resetCatalogCache()
 {
     m_catalogLoaded = false;
     m_catalogLoadedAt = {};
-    m_catalog.clear();
+    // Intentionally leak the old vector. On Linux AppImage, the host can interpose
+    // CatalogEntry::~ into this DSO; destroying thousands of entries built with a
+    // different SDK layout then segfaults during plugin unload/reinstall.
+    if (!m_catalog.isEmpty()) {
+        auto* abandoned = new QVector<arachnel::core::CatalogEntry>();
+        m_catalog.swap(*abandoned);
+    }
 }
 
 void FreetpPlugin::ensureCatalogLoaded() const
@@ -203,7 +209,12 @@ void FreetpPlugin::ensureCatalogLoaded() const
     }
 
     const QByteArray payload = readCatalogBytes(m_rootPath);
-    m_catalog.clear();
+    // Leak-swap like resetCatalogCache - avoid CatalogEntry::~ across a mismatched
+    // host/plugin layout when clearing thousands of rows (Windows/Linux crashes).
+    if (!m_catalog.isEmpty()) {
+        auto* abandoned = new QVector<arachnel::core::CatalogEntry>();
+        m_catalog.swap(*abandoned);
+    }
     if (!payload.isEmpty())
         m_catalog = arachnel::core::parseCatalogFeed(payload, id());
     m_catalogLoaded = true;
