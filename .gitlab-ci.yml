@@ -62,9 +62,8 @@ build:windows:
       python --version
       if (-not $env:QT_INSTALL_DIR) { $env:QT_INSTALL_DIR = 'D:\Qt' }
       if (-not $env:QT_VERSION) { $env:QT_VERSION = '6.11.1' }
-      if (-not $env:ARACHNEL_SDK_DIR -and (Test-Path 'D:\Work\Arachnel\cmake\ArachnelPluginSdk.cmake')) {
-        $env:ARACHNEL_SDK_DIR = 'D:\Work\Arachnel'
-      }
+      # Do not pin ARACHNEL_SDK_DIR to a local D:\Work\Arachnel tree: it goes stale
+      # and ships the wrong CatalogEntry sizeof. build-plugin.ps1 reclones develop in CI.
   script:
     - pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/ci/build-plugin.ps1
   artifacts:
