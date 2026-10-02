@@ -10,7 +10,6 @@ $Root = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 . (Join-Path $PSScriptRoot "read-launcher-toolchain.ps1")
 
 $BuildPath = Join-Path $Root $BuildDir
-$SdkDir = if ($env:ARACHNEL_SDK_DIR) { $env:ARACHNEL_SDK_DIR } else { Join-Path $Root ".ci\arachnel-sdk" }
 $QtRoot = if ($env:QT_INSTALL_DIR) { $env:QT_INSTALL_DIR } else { Join-Path $Root ".ci\qt" }
 $QtVersion = $env:QT_VERSION
 $QtArch = $env:QT_WINDOWS_ARCH
@@ -30,12 +29,25 @@ if ($env:CI_COMMIT_TAG) {
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
-if (-not (Test-Path -LiteralPath (Join-Path $SdkDir "cmake\ArachnelPluginSdk.cmake"))) {
-    Write-Host "==> Clone Arachnel SDK ($SdkRef)"
+# CI always reclones into .ci\arachnel-sdk (ignore stale ARACHNEL_SDK_DIR / D:\Work\Arachnel).
+# Stale SDK checkouts shipped CatalogEntry 592 after core shrank to 544.
+if ($env:GITLAB_CI) {
+    $SdkDir = Join-Path $Root ".ci\arachnel-sdk"
+    Write-Host "==> Sync Arachnel SDK ($SdkRef) for CI"
     if (Test-Path -LiteralPath $SdkDir) { Remove-Item -LiteralPath $SdkDir -Recurse -Force }
     git clone --depth 1 --branch $SdkRef https://github.com/BadKiko/Arachnel.git $SdkDir
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+} else {
+    $SdkDir = if ($env:ARACHNEL_SDK_DIR) { $env:ARACHNEL_SDK_DIR } else { Join-Path $Root ".ci\arachnel-sdk" }
+    if (-not (Test-Path -LiteralPath (Join-Path $SdkDir "cmake\ArachnelPluginSdk.cmake"))) {
+        Write-Host "==> Clone Arachnel SDK ($SdkRef)"
+        if (Test-Path -LiteralPath $SdkDir) { Remove-Item -LiteralPath $SdkDir -Recurse -Force }
+        git clone --depth 1 --branch $SdkRef https://github.com/BadKiko/Arachnel.git $SdkDir
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    }
 }
+$sdkHead = (git -C $SdkDir rev-parse --short HEAD).Trim()
+Write-Host "SDK HEAD=$sdkHead path=$SdkDir"
 
 function Find-MingwBin {
     param([string]$Prefix, [string]$InstallRoot)

@@ -6,7 +6,6 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "${ROOT}/scripts/ci/read-launcher-toolchain.sh"
 
 BUILD="${BUILD_DIR:-${ROOT}/build-linux}"
-SDK_DIR="${ARACHNEL_SDK_DIR:-${ROOT}/.ci/arachnel-sdk}"
 SDK_REF="${ARACHNEL_SDK_REF}"
 QT_VERSION="${QT_VERSION}"
 QT_ARCH="${QT_LINUX_ARCH}"
@@ -21,11 +20,22 @@ if [[ -n "${CI_COMMIT_TAG:-}" ]]; then
   python3 "${ROOT}/scripts/ci/set_plugin_version.py" "${CI_COMMIT_TAG}"
 fi
 
-if [[ ! -f "${SDK_DIR}/cmake/ArachnelPluginSdk.cmake" ]]; then
-  echo "==> Clone Arachnel SDK (${SDK_REF})"
+# CI always reclones into .ci/arachnel-sdk (ignore stale ARACHNEL_SDK_DIR / local trees).
+# Stale SDK checkouts shipped CatalogEntry 592 after core shrank to 544.
+if [[ -n "${GITLAB_CI:-}" ]]; then
+  SDK_DIR="${ROOT}/.ci/arachnel-sdk"
+  echo "==> Sync Arachnel SDK (${SDK_REF}) for CI"
   rm -rf "${SDK_DIR}"
   git clone --depth 1 --branch "${SDK_REF}" https://github.com/BadKiko/Arachnel.git "${SDK_DIR}"
+else
+  SDK_DIR="${ARACHNEL_SDK_DIR:-${ROOT}/.ci/arachnel-sdk}"
+  if [[ ! -f "${SDK_DIR}/cmake/ArachnelPluginSdk.cmake" ]]; then
+    echo "==> Clone Arachnel SDK (${SDK_REF})"
+    rm -rf "${SDK_DIR}"
+    git clone --depth 1 --branch "${SDK_REF}" https://github.com/BadKiko/Arachnel.git "${SDK_DIR}"
+  fi
 fi
+echo "SDK HEAD=$(git -C "${SDK_DIR}" rev-parse --short HEAD) path=${SDK_DIR}"
 
 if [[ ! -f "${QT_PATH}/lib/cmake/Qt6/Qt6Config.cmake" ]]; then
   echo "==> Install Qt ${QT_VERSION} (${QT_ARCH}) modules: ${QT_MODULES}"
@@ -57,6 +67,8 @@ cmake -S "${ROOT}" -B "${BUILD}" -G Ninja \
 echo "==> Build freetp_plugin"
 cmake --build "${BUILD}" --target freetp_plugin -j"$(nproc)"
 bash "${ROOT}/scripts/ci/check-linux-runtime.sh" "${BUILD}/plugin-bundle/libfreetp_plugin.so"
+bash "${ROOT}/scripts/ci/check-catalog-entry-size.sh" \
+  "${BUILD}/plugin-bundle/libfreetp_plugin.so" "${SDK_DIR}" "${QT_PATH}"
 
 mkdir -p "${DIST}"
 cp -f "${BUILD}/dist/freetp.arach" "${DIST}/freetp.arach"
