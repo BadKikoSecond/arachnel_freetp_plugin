@@ -86,10 +86,34 @@ jobs:
       - name: Build plugin
         run: bash scripts/ci/build-plugin.sh
 
+      # verify jobs run in bare distro containers: hand them just the Qt libs
+      # the plugin links against (check-linux-runtime.sh looks under .ci/qt/).
+      - name: Stage Qt runtime for verify
+        run: |
+          set -euo pipefail
+          QT_LIB="$(ls -d "${PWD}"/.ci/qt/*/gcc_64/lib)"
+          mkdir -p qt-runtime
+          for f in libQt6Core.so.6 libQt6Network.so.6; do
+            cp -aL "${QT_LIB}/${f}" qt-runtime/
+          done
+          for f in libQt6Core.so.6 libQt6Network.so.6; do
+            LD_LIBRARY_PATH="${QT_LIB}" ldd "qt-runtime/${f}" \
+              | awk -v qt="${QT_LIB}/" 'index($3, qt) == 1 { print $3 }' \
+              | while read -r dep; do cp -aL "${dep}" qt-runtime/; done
+          done
+          ls -lh qt-runtime
+
       - uses: actions/upload-artifact@v4
         with:
           name: freetp-linux
           path: dist/linux/freetp.arach
+          if-no-files-found: error
+          retention-days: 7
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qt-runtime
+          path: qt-runtime
           if-no-files-found: error
           retention-days: 7
 
@@ -163,7 +187,7 @@ jobs:
           retention-days: 30
 
   verify:
-    needs: package
+    needs: [build-linux, package]
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -176,6 +200,11 @@ jobs:
         with:
           name: freetp-universal
           path: dist/universal
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: qt-runtime
+          path: .ci/qt/lib
 
       - name: Check Linux runtime in ${{ matrix.image }}
         run: |
