@@ -125,14 +125,16 @@ Rebuild after Arachnel changes `ARACHNEL_PLUGIN_API_VERSION` or `CatalogEntry` l
 
 ## Releases (CI/CD)
 
-Pushing a **semver tag** on `main` triggers [GitLab CI](.gitlab-ci.yml):
+Pushing a **semver tag** triggers [GitHub Actions](.github/workflows/release.yml) (or run **Actions → Release → Run workflow** and enter the version):
 
 ```bash
 git tag v1.0.0
-git push BadKiko v1.0.0
+git push origin v1.0.0
 ```
 
-Pipeline builds platform-specific bundles, merges them into **one universal `freetp.arach`**, then publishes a GitLab Release.
+The workflow builds platform-specific bundles, merges them into **one universal `freetp.arach`**, checks it on Ubuntu / Fedora / Arch, publishes a GitHub Release and triggers the sourcelist ingest on GitLab.
+
+Set the repository secret **`SOURCELIST_TRIGGER_TOKEN`** (a pipeline trigger token of `BadKiko/arachnel-plugins-sourcelist`, *Settings → CI/CD → Pipeline trigger tokens*). Without it the release is still published, but the sourcelist is not updated.
 
 Contents of the universal bundle:
 
@@ -144,16 +146,11 @@ Contents of the universal bundle:
 
 Arachnel loads only the native library for the current OS.
 
-```bash
-git tag v1.0.0
-git push BadKiko v1.0.0
-```
-
 | Tag format | Example |
 |------------|---------|
 | Semver | `v1.0.0`, `v1.0.1-beta` |
 
-Windows job uses GitLab **SaaS Windows** runners (`saas-windows-medium-amd64`). Linux uses shared runners.
+Windows builds on `windows-2022` (MinGW, installed via aqtinstall), Linux on `ubuntu-24.04`, both GitHub-hosted runners.
 
 Manual/local CI scripts:
 
@@ -172,7 +169,7 @@ Environment variable `ARACHNEL_SDK_REF` (default `master`) selects the Arachnel 
 
 **Release builds:** CI reads `scripts/ci/launcher-toolchain.env` — a lockfile mirrored from [Arachnel `.github/workflows/release.yml`](https://github.com/BadKiko/Arachnel/blob/master/.github/workflows/release.yml) (Qt **6.8.2**, `win64_msvc2022_64` / `linux_gcc_64`, modules `qtshadertools qtmultimedia`, SDK tag `v0.1.x`). Bump this file when cutting a new Arachnel GitHub release so plugin DLLs match the published launcher.
 
-Install **GitLab `freetp.arach` only into Arachnel Setup from GitHub** (MSVC). Do not use it with local `run.ps1` MinGW dev builds.
+Install the released `freetp.arach` into an Arachnel build made with the same toolchain (MinGW, Qt 6.11.1). Do not mix it with other local dev builds.
 
 ---
 

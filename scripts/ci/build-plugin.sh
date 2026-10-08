@@ -16,13 +16,14 @@ cd "${ROOT}"
 
 echo "Toolchain: Qt ${QT_VERSION} ${QT_ARCH}, SDK ${SDK_REF}, modules ${QT_MODULES}"
 
-if [[ -n "${CI_COMMIT_TAG:-}" ]]; then
-  python3 "${ROOT}/scripts/ci/set_plugin_version.py" "${CI_COMMIT_TAG}"
+RELEASE_TAG="${RELEASE_TAG:-${CI_COMMIT_TAG:-}}"
+if [[ -n "${RELEASE_TAG}" ]]; then
+  python3 "${ROOT}/scripts/ci/set_plugin_version.py" "${RELEASE_TAG}"
 fi
 
 # CI always reclones into .ci/arachnel-sdk (ignore stale ARACHNEL_SDK_DIR / local trees).
 # Stale SDK checkouts shipped CatalogEntry 592 after core shrank to 544.
-if [[ -n "${GITLAB_CI:-}" ]]; then
+if [[ -n "${GITHUB_ACTIONS:-}${GITLAB_CI:-}" ]]; then
   SDK_DIR="${ROOT}/.ci/arachnel-sdk"
   echo "==> Sync Arachnel SDK (${SDK_REF}) for CI"
   rm -rf "${SDK_DIR}"

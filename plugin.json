@@ -6,7 +6,7 @@
   "library": "freetp_plugin",
   "iconName": "storefront",
   "catalogUrl": "https://gitlab.com/BadKiko/freetp-hydra-link/-/raw/main/games-arachnel.json?ref_type=heads",
-  "repository": "https://github.com/PetWork/arachnel-plugin-freetp",
+  "repository": "https://github.com/BadKikoSecond/arachnel_freetp_plugin",
   "description": "Russian site similar to online-fix.me",
   "minArachnel": "0.1.34",
   "maxArachnel": "",

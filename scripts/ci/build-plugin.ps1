@@ -24,14 +24,15 @@ $useMingw = $QtKit -match 'mingw'
 
 Write-Host "Toolchain: Qt $QtVersion $QtArch ($QtKit), SDK $SdkRef, modules $($env:QT_MODULES)"
 
-if ($env:CI_COMMIT_TAG) {
-    python (Join-Path $Root "scripts\ci\set_plugin_version.py") $env:CI_COMMIT_TAG
+$ReleaseTag = if ($env:RELEASE_TAG) { $env:RELEASE_TAG } else { $env:CI_COMMIT_TAG }
+if ($ReleaseTag) {
+    python (Join-Path $Root "scripts\ci\set_plugin_version.py") $ReleaseTag
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
 # CI always reclones into .ci\arachnel-sdk (ignore stale ARACHNEL_SDK_DIR / D:\Work\Arachnel).
 # Stale SDK checkouts shipped CatalogEntry 592 after core shrank to 544.
-if ($env:GITLAB_CI) {
+if ($env:GITHUB_ACTIONS -or $env:GITLAB_CI) {
     $SdkDir = Join-Path $Root ".ci\arachnel-sdk"
     Write-Host "==> Sync Arachnel SDK ($SdkRef) for CI"
     if (Test-Path -LiteralPath $SdkDir) { Remove-Item -LiteralPath $SdkDir -Recurse -Force }
