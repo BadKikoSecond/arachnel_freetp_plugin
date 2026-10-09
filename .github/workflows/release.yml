@@ -19,7 +19,7 @@ on:
         required: true
         type: string
       publish_sourcelist:
-        description: 'Trigger the GitLab sourcelist ingest after the release'
+        description: 'Notify the sourcelist after the release'
         required: false
         default: true
         type: boolean
@@ -269,30 +269,24 @@ jobs:
           echo "download_url=${URL}" >> "${GITHUB_OUTPUT}"
           echo "Published ${URL}"
 
-  publish-sourcelist:
+  notify-sourcelist:
     needs: [prepare, release]
-    if: github.event_name == 'push' || github.event.inputs.publish_sourcelist == 'true'
+    if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.publish_sourcelist == 'true'
     runs-on: ubuntu-24.04
-    env:
-      SOURCELIST_TRIGGER_TOKEN: ${{ secrets.SOURCELIST_TRIGGER_TOKEN }}
-      SOURCELIST_PROJECT: BadKiko%2Farachnel-plugins-sourcelist
     steps:
-      - name: Trigger sourcelist ingest (GitLab)
+      - name: Dispatch sourcelist ingest
         env:
+          DISPATCH_TOKEN: ${{ secrets.SOURCELIST_DISPATCH_TOKEN }}
           DOWNLOAD_URL: ${{ needs.release.outputs.download_url }}
           TAG: ${{ needs.prepare.outputs.tag }}
         run: |
-          if [[ -z "${SOURCELIST_TRIGGER_TOKEN}" ]]; then
-            echo "::warning::SOURCELIST_TRIGGER_TOKEN is not set - sourcelist was NOT updated. Ingest ${DOWNLOAD_URL} manually."
+          if [[ -z "${DISPATCH_TOKEN}" ]]; then
+            echo "::notice::SOURCELIST_DISPATCH_TOKEN is not set - the sourcelist picks this release up on its next poll (every 30 min) or via Actions -> Sources -> Run workflow."
             exit 0
           fi
           curl --fail-with-body -sS -X POST \
-            --form "token=${SOURCELIST_TRIGGER_TOKEN}" \
-            --form "ref=main" \
-            --form "variables[INGEST_DOWNLOAD_URL]=${DOWNLOAD_URL}" \
-            --form "variables[INGEST_ARACH_NAME]=freetp.arach" \
-            --form "variables[INGEST_TAG]=${TAG}" \
-            --form "variables[INGEST_MIN_ARACHNEL]=0.1.34" \
-            --form "variables[INGEST_MAX_ARACHNEL]=" \
-            --form "variables[INGEST_ABI_TOKEN]=develop" \
-            "https://gitlab.com/api/v4/projects/${SOURCELIST_PROJECT}/trigger/pipeline"
+            -H "Authorization: Bearer ${DISPATCH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/BadKikoSecond/arachnel_plugins_sourcelist/dispatches \
+            -d "$(jq -nc --arg url "${DOWNLOAD_URL}" --arg tag "${TAG}" \
+              '{event_type:"plugin-release",client_payload:{url:$url,arach:"freetp.arach",tag:$tag,min_arachnel:"0.1.34",max_arachnel:"",abi_token:"develop"}}')"

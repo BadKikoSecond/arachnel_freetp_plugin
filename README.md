@@ -132,9 +132,9 @@ git tag v1.0.0
 git push origin v1.0.0
 ```
 
-The workflow builds platform-specific bundles, merges them into **one universal `freetp.arach`**, checks it on Ubuntu / Fedora / Arch, publishes a GitHub Release and triggers the sourcelist ingest on GitLab.
+The workflow builds platform-specific bundles, merges them into **one universal `freetp.arach`**, checks it on Ubuntu / Fedora / Arch, publishes a GitHub Release and notifies the sourcelist.
 
-Set the repository secret **`SOURCELIST_TRIGGER_TOKEN`** (a pipeline trigger token of `BadKiko/arachnel-plugins-sourcelist`, *Settings → CI/CD → Pipeline trigger tokens*). Without it the release is still published, but the sourcelist is not updated.
+The sourcelist ([`arachnel_plugins_sourcelist`](https://github.com/BadKikoSecond/arachnel_plugins_sourcelist)) polls this repo's releases every 30 minutes, so no secret is required. Add the repository secret **`SOURCELIST_DISPATCH_TOKEN`** (fine-grained token with *Contents: write* on the sourcelist) to make the update instant.
 
 Contents of the universal bundle:
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Local/manual helper. Release CI triggers arachnel-plugins-sourcelist instead
+# Local/manual helper. Release CI notifies BadKikoSecond/arachnel_plugins_sourcelist instead
 # (see the publish-sourcelist job in .github/workflows/release.yml).
 set -euo pipefail
 
@@ -12,7 +12,7 @@ source "${ROOT}/scripts/ci/read-launcher-toolchain.sh"
 ARACH="${1:-}"
 if [[ -z "${ARACH}" || ! -f "${ARACH}" ]]; then
   echo "usage: publish-sourcelist.sh path/to/plugin.arach" >&2
-  echo "Release workflow triggers BadKiko/arachnel-plugins-sourcelist (secret SOURCELIST_TRIGGER_TOKEN)." >&2
+  echo "Release workflow notifies BadKikoSecond/arachnel_plugins_sourcelist (optional secret SOURCELIST_DISPATCH_TOKEN)." >&2
   exit 1
 fi
 
